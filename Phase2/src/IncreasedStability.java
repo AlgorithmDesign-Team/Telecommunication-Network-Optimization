@@ -1,89 +1,60 @@
 import java.util.*;
 
 public class IncreasedStability {
-    static int[] parent;
-    static int[] rank_;
-
-    static int find(int x){
-        if(parent[x] != x){
-            parent[x] = find(parent[x]);
-        } 
-        return parent[x];
-    }
-
-    static boolean union(int x, int y){
-        int rx = find(x);
-        int ry = find(y);
-        if(rx == ry){
-            return false;
-        }
-        if(rank_[rx] < rank_[ry]){
-            int t = rx; rx = ry; ry = t; 
-        }
-        parent[ry] = rx;
-        if(rank_[rx] == rank_[ry]){
-            rank_[rx]++;
-        }
-        return true;
-    }
-
+   
     public static void main(String[] args){
         Scanner sc = new Scanner(System.in);
-        int n = sc.nextInt();
-        int e = sc.nextInt();
-        int[][] edges = new int[e][3]; 
-        for(int i = 0; i < e; i++){
-            edges[i][0] = sc.nextInt();
-            edges[i][1] = sc.nextInt();
-            edges[i][2] = sc.nextInt();
-        }
-        Arrays.sort(edges, (a , b) -> a[2] - b[2]);
-        parent = new int[n + 1];
-        rank_ = new int[n + 1];
-        for(int i = 1; i <= n; i++){
-            parent[i] = i;
-        }
-        List<int[]> mstEdges = new ArrayList<>(); 
+        //ورودی یال های درخت پوشای کمینه
+        int numTreeEdges = sc.nextInt();
+        List<int[]> mstEdges = new ArrayList<>();
         List<List<Integer>> mstAdj = new ArrayList<>();
+        // برای پیدا کردن تعداد شهرها
+        int n = 0;
+        for(int i = 0; i < numTreeEdges; i++){
+            int u = sc.nextInt();
+            int v = sc.nextInt();
+            mstEdges.add(new int[]{u, v});
+            //پیدا کردن بزرگ ترین شماره راس
+            n = Math.max(n, Math.max(u, v));
+        }
+        n++;
+        //ساخت لیست مجاورت درخت پوشا
         for(int i = 0; i <= n; i++){
             mstAdj.add(new ArrayList<>());
         }
-        for(int[] edge : edges){
+        for(int[] edge : mstEdges){
             int u = edge[0], v = edge[1];
-            if (union(u, v)){
-                mstEdges.add(new int[]{u, v});
-                mstAdj.get(u).add(v);
-                mstAdj.get(v).add(u);
-                if(mstEdges.size() == n - 1){
-                    break;
-                }
-            }
+            mstAdj.get(u).add(v);
+            mstAdj.get(v).add(u);
         }
+        //دریافت کابل های پشتیبان
         int m = sc.nextInt();
-        int[][] backups = new int[m][3]; 
+        int[][] backups = new int[m][3];
         for(int i = 0; i < m; i++){
-            backups[i][0] = sc.nextInt();
-            backups[i][1] = sc.nextInt();
-            backups[i][2] = sc.nextInt();
+            backups[i][0] = sc.nextInt();// شهر اول
+            backups[i][1] = sc.nextInt();// شهر دوم
+            backups[i][2] = sc.nextInt();// هزینه فعال‌سازی
         }
         boolean possible = true;
         long totalCost = 0;
         boolean[] usedBackup = new boolean[m];
         List<int[]> chosenBackups = new ArrayList<>();
+        // هر یال درخت پوشا را جداگانه بررسی می کنیم
         for(int[] mstEdge : mstEdges){
             int u = mstEdge[0];
             int v = mstEdge[1];
+            //راس های یک سمت یال بعد از حذف یال
             Set<Integer> sideU = new HashSet<>();
             Deque<Integer> stack = new ArrayDeque<>();
             stack.push(u);
             sideU.add(u);
+            //پیدا کردن یکی از دو بخش گراف بعد از حذف یال
             while(!stack.isEmpty()){
                 int cur = stack.pop();
+                //یال مورد بررسی را موقتا حذف می کنیم
                 for(int next : mstAdj.get(cur)){
-                    if(cur == u && next == v){
-                        continue;
-                    }
-                    if(cur == v && next == u){
+                    // یال فعلی (u-v) را نادیده بگیر
+                    if((cur == u && next == v) || (cur == v && next == u)){
                         continue;
                     }
                     if(!sideU.contains(next)){
@@ -94,14 +65,18 @@ public class IncreasedStability {
             }
             int bestIdx = -1;
             long bestCost = Long.MAX_VALUE;
+            //پیدا کردن ارزان ترین کابل پشتیبان که دو بخش را به هم وصل می کند
             for(int i = 0; i < m; i++){
-                if (usedBackup[i]) continue; 
+                if (usedBackup[i]){
+                    continue;
+                }
                 int a = backups[i][0];
                 int b = backups[i][1];
                 int c = backups[i][2];
                 boolean aInU = sideU.contains(a);
                 boolean bInU = sideU.contains(b);
-                if(aInU != bInU){ 
+                // پشتیبان از روی یال قطع شده عبور می‌کند
+                if(aInU != bInU){
                     if(c < bestCost){
                         bestCost = c;
                         bestIdx = i;
@@ -110,12 +85,13 @@ public class IncreasedStability {
             }
             if(bestIdx == -1){
                 boolean anyCoverExists = false;
+                //بررسی اینکه اصلا کابلی برای اتصال 2 بخش وجود دارد یا نه
                 for(int i = 0; i < m; i++){
                     int a = backups[i][0], b = backups[i][1];
                     boolean aInU = sideU.contains(a);
                     boolean bInU = sideU.contains(b);
-                    if(aInU != bInU){ 
-                        anyCoverExists = true; 
+                    if(aInU != bInU){
+                        anyCoverExists = true;
                         break;
                     }
                 }
@@ -123,24 +99,25 @@ public class IncreasedStability {
                     possible = false;
                     break;
                 }
+                // پوشش داده شده -> ادامه بده
                 continue;
             }
+            //انتخاب کابل پشتیبان
             usedBackup[bestIdx] = true;
             totalCost += bestCost;
             chosenBackups.add(new int[]{backups[bestIdx][0], backups[bestIdx][1]});
         }
-        StringBuilder sb = new StringBuilder();
+        //چاپ خروجی
         if(!possible){
-            sb.append("NO\n");
+            System.out.println("NO");
         } 
-        else{
-            sb.append("YES\n");
-            sb.append(totalCost).append("\n");
-            sb.append(chosenBackups.size()).append("\n");
+        else {
+            System.out.println("YES");
+            System.out.println(totalCost);
+            System.out.println(chosenBackups.size());
             for(int[] b : chosenBackups){
-                sb.append(b[0]).append(" ").append(b[1]).append("\n");
+                System.out.println(b[0] + " " + b[1]);
             }
         }
-        System.out.print(sb);
     }
 }
