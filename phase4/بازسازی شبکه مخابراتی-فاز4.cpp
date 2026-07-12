@@ -71,10 +71,13 @@ public:
 struct State{
 
     int index=0;
+
+    //برای کابل های انتخب شده تا الان:
     int buildCost=0;
     int maintainCost=0;
     int edgeCount=0;
 
+    //برای تشخیص چرخه
     DSU dsu;
 
     // اندیس کابل‌های انتخاب شده
@@ -82,15 +85,19 @@ struct State{
 
 };
 
-//==================== Global Variables ====================
+//============ Global Variables =============
 
 int n,e,h,B;
 vector<Edge> cables;
+
+//بهترین هزینه تا الان
 int bestCost = INT_MAX;
 vector<int> bestAnswer;
+
+//آیا حداقل یک جواب معتبر پیدا شده؟
 bool foundAny = false;
 
-//==================== Utility ====================
+//============  (Utility) توابع کمکی  ==============
 
 bool createsCycle(State& state, const Edge& edge){
 
@@ -98,9 +105,9 @@ bool createsCycle(State& state, const Edge& edge){
 }
 
 bool isSolution(const State& state){
-    return (state.edgeCount == n-1 &&
-           state.maintainCost <= B);
+    return (state.edgeCount == n-1 && state.maintainCost <= B);
 }
+
 //ایده: ادامه از وضعیت فعلی با کراسکال برای تخمین کمترین هزینه ساخت
 int lowerBound(const State& state){
 
@@ -123,6 +130,7 @@ int lowerBound(const State& state){
 
     return cost;
 }
+
 //هرس
 bool prune(const State& state){
 
@@ -134,10 +142,11 @@ bool prune(const State& state){
     if((e - state.index) < ((n - 1) - state.edgeCount))
     return true;
 
+    //هزینه ساخت فعلی از بهترین جواب بیشتره
     if(state.buildCost >= bestCost)
     return true;
 
-    // حتی بهترین حالت هم از جواب فعلی بهتر نیست
+    // حتی بهترین حالت این شاخه هم از هزینه فعلی کمتر نیست
     if(lowerBound(state) >= bestCost)
     return true;
 
@@ -172,8 +181,7 @@ void branch(State current) {
     if(edge.unharmed){
 
         // فقط اگر چرخه نسازد آن را انتخاب می‌کنیم.
-        // چون رایگان است، شاخه Skip لازم نیست.
-
+        // چون رایگان است، شاخه عدم انتخاب کابل لازم نیست.
         if(!createsCycle(current,edge)){
 
             State include = current;
@@ -191,7 +199,6 @@ void branch(State current) {
         else{
 
             // اگر چرخه ساخت، مجبوریم ردش کنیم.
-
             State skip = current;
 
             skip.index++;
@@ -202,7 +209,7 @@ void branch(State current) {
         return;
     }
 
-    //  Include شاخه
+    //  برای کابل های ناسالم Include شاخه
     if(current.maintainCost + edge.m <= B && !createsCycle(current, edge)){
         State include = current;
 
@@ -219,7 +226,7 @@ void branch(State current) {
         branch(include);
     }
 
-    //  Exclude شاخه
+    //  برای کابل های ناسالم Exclude شاخه
     State exclude = current;
 
     exclude.index++;
@@ -231,6 +238,7 @@ void solve(){
     
     State root;
 
+    //وضعیت اولیه، ریشه
     root.index = 0;
     root.buildCost = 0;
     root.maintainCost = 0;
@@ -253,7 +261,7 @@ void solve(){
         }
 
         cout << totalMaintain << endl;
-        cout << bestAnswer.size() << endl; //n-1
+        cout << bestAnswer.size() << endl; //n-1 = تعداد یال های درخت
         for (int idx : bestAnswer) {
             cout << cables[idx].u << " " << cables[idx].v << endl;
         }
@@ -292,13 +300,13 @@ void readInputs(){
 
 int main(){
 
+    //دریافت ورودی ها
     readInputs();
 
-    sort(cables.begin(), cables.end(),
-    [](const Edge& a,const Edge& b){
+    //مرتب کردن بر اساس هزینه ساخت به صورت صعودی
+    sort(cables.begin(), cables.end(), [](const Edge& a,const Edge& b){
 
-    if(a.w != b.w)
-        return a.w < b.w;
+    if(a.w != b.w) return a.w < b.w;
 
     return a.m < b.m;
     });
