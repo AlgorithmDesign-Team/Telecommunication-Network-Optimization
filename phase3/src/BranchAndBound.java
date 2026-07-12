@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class BranchAndBound {
 
@@ -9,8 +8,6 @@ public class BranchAndBound {
     private int bestCost;
     private ArrayList<BackupEdge> bestAnswer;
 
-    private int[] minEdgeCost;
-
     public BranchAndBound(ArrayList<BackupEdge> backups, int mstEdgeCount) {
 
         this.backups = backups;
@@ -18,9 +15,6 @@ public class BranchAndBound {
 
         bestCost = Integer.MAX_VALUE;
         bestAnswer = new ArrayList<>();
-
-        buildMinEdgeCost();
-
         // ساخت یک جواب اولیه با الگوریتم حریصانه
         greedyUpperBound();
     }
@@ -31,23 +25,6 @@ public class BranchAndBound {
 
     public ArrayList<BackupEdge> getBestAnswer() {
         return bestAnswer;
-    }
-
-    // ساخت آرایه کمترین هزینه پوشش هر یال
-    private void buildMinEdgeCost() {
-
-        minEdgeCost = new int[mstEdgeCount];
-
-        Arrays.fill(minEdgeCost, Integer.MAX_VALUE);
-
-        for (BackupEdge backup : backups) {
-
-            for (int edgeId : backup.covers) {
-
-                minEdgeCost[edgeId] =
-                        Math.min(minEdgeCost[edgeId], backup.cost);
-            }
-        }
     }
 
     // آیا همه یال‌های درخت پوشش داده شده‌اند؟
@@ -65,25 +42,21 @@ public class BranchAndBound {
     }
 
     // آیا با کابل‌های باقی‌مانده هنوز جواب ممکن است؟
-    private boolean canStillCover(State state) {
+    private boolean isCoveragePossible(State state) {
 
         boolean[] possible = state.covered.clone();
 
         for (int i = state.index; i < backups.size(); i++) {
 
             for (int id : backups.get(i).covers) {
-
                 possible[id] = true;
-
             }
-
         }
-
         return allCovered(possible);
-
     }
 
-    // Greedy برای تولید جواب اولیه (Upper Bound)
+    // تولید یک جواب اولیه با الگوریتم حریصانه
+    // تا بهترین هزینه اولیه برای هرس شاخه‌ها به دست آید.
     private void greedyUpperBound() {
 
         boolean[] covered = new boolean[mstEdgeCount];
@@ -146,40 +119,34 @@ public class BranchAndBound {
 
     }
 
-    // Lower Bound
+    // کران پایین: هزینه فعلی + ارزان‌ترین کابلی که حداقل
+    // یکی از یال‌های پوشش‌نشده را پوشش می‌دهد.
     private int lowerBound(State state) {
-
         int bound = state.cost;
-
         int minRemaining = Integer.MAX_VALUE;
 
         for (int i = state.index; i < backups.size(); i++) {
 
-            BackupEdge backup = backups.get(i);
+            BackupEdge b = backups.get(i);
 
-            for (int id : backup.covers) {
+            for (int id : b.covers) {
 
                 if (!state.covered[id]) {
 
-                    minRemaining =
-                            Math.min(minRemaining, backup.cost);
-
+                    minRemaining = Math.min(minRemaining, b.cost);
                     break;
 
                 }
-
             }
-
         }
 
         if (minRemaining == Integer.MAX_VALUE)
             return Integer.MAX_VALUE;
 
         return bound + minRemaining;
-
     }
 
-    // Branch
+    // اجرای بازگشتی الگوریتم Branch and Bound
     private void branch(State state) {
 
         if (allCovered(state.covered)) {
@@ -192,26 +159,24 @@ public class BranchAndBound {
                         new ArrayList<>(state.selected);
 
             }
-
             return;
-
         }
 
         if (state.cost >= bestCost)
             return;
 
-        if (!canStillCover(state))
-            return;
-
-        if (lowerBound(state) >= bestCost)
+        if (!isCoveragePossible(state))
             return;
 
         if (state.index == backups.size())
             return;
 
+        if (lowerBound(state) >= bestCost)
+            return;
+
         BackupEdge current = backups.get(state.index);
 
-        // Take
+        // شاخه انتخاب کابل فعلی
         State take = new State(state);
         take.index++;
         take.cost += current.cost;
@@ -223,7 +188,7 @@ public class BranchAndBound {
 
         branch(take);
 
-        // Skip
+        // شاخه عدم انتخاب کابل فعلی
         State skip = new State(state);
         skip.index++;
         branch(skip);
