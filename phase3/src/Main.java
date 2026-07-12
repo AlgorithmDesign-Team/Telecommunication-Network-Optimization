@@ -8,7 +8,7 @@ public class Main {
         Scanner sc = new Scanner(System.in);
 
         // ---------- ورودی درخت MST ----------
-        int e = sc.nextInt();          // تعداد یال‌های MST (معمولاً n-1)
+        int e = sc.nextInt();          // تعداد یال‌های MST
         int n = e + 1;          // تعداد شهرها
 
         TreeMST tree = new TreeMST(n);
@@ -24,6 +24,7 @@ public class Main {
 
             mstEdges.add(edge);
 
+            //یال به راس هر دو طرف یال در درخت اضافه می‌شه
             tree.addEdge(edge);
         }
 
@@ -43,10 +44,12 @@ public class Main {
             backups.add(backup);
         }
 
+        //پیدا کردن و تخصیص دادن مسیرهای پشتیبانی کننده درخت به هر کابل
         for (BackupEdge backup : backups) {
             tree.computeCoverage(backup);
         }
 
+        // مرتب سازی کابل‌های پشتیبان بر اساس هزینه بر اساس هزینه ساخت بر تعداد کابل پشتیبان کننده به طور صعودی برای افزایش سرعت
         backups.sort((a, b) -> {
 
             double scoreA =

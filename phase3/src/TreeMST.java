@@ -6,12 +6,12 @@ public class TreeMST {
 
     int n;
 
+    //آرایه لیست‌های مجاورت برای تشکیل درخت
     ArrayList<Edge>[] adj;
 
     boolean[] visited;
+
     ArrayList<Integer> path;
-
-
 
     public TreeMST(int n){
 
@@ -55,10 +55,12 @@ public class TreeMST {
 
     }
 
+    //پیدا کردن مسیر بین دو راس در درخت
     public boolean dfs(int current, int target) {
 
         visited[current] = true;
 
+        //اضافه کردن راس فعلی به مسیر
         path.add(current);
 
         if (current == target) {
@@ -79,38 +81,44 @@ public class TreeMST {
 
         }
 
+        //اگر مسیر از این راس به مقصد نرسید این راس رو از مسیر حذف میکنیم.
         path.remove(path.size() - 1);
 
         return false;
 
     }
 
+    //پیدا کردن مسیر بین دو شهر در درخت
     public ArrayList<Integer> findPath(int start, int end){
 
         Arrays.fill(visited, false);
         path.clear();
 
+        //اجرای DFS و برگرداندن کپی مسیر پیدا شده.
         if(dfs(start, end)){
             return new ArrayList<>(path);
         }
 
+        //اگه مسیری وجود نداشت لیست خالی برگردون.
         return new ArrayList<>();
     }
 
+    //محاسبه و تخصیص یال‌های پوشش داده شده توسط یک کابل پشتیبان در درخت به اون کابل
     public void computeCoverage(BackupEdge backup){
 
-        ArrayList<Integer> path =
-                findPath(backup.from, backup.to);
+        //دریافت لیست راس های مسیر بین دو سر کابل در درخت
+        ArrayList<Integer> path = findPath(backup.from, backup.to);
 
         for(int i = 0; i < path.size()-1; i++){
 
             int u = path.get(i);
             int v = path.get(i+1);
 
+            //پیدا کردن id یال در مسیر
             for(Edge edge : adj[u]){
 
                 if(edge.to == v){
-
+                    // اضافه کردن id هر یال درخت در مسیر به لیست پوشش کابل پشتیبانی
                     backup.covers.add(edge.id);
 
                     break;
