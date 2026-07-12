@@ -63,24 +63,23 @@ public class BranchAndBound {
         }
     }
     // کران پایین برای هرس
-    private int lowerBound(State state){
-
+    private int lowerBound(State state) {
         int bound = state.cost;
-
-
-        for(int i=0; i<mstEdgeCount; i++){
-
-            if(!state.covered[i]){
-
-                if(minEdgeCost[i] == Integer.MAX_VALUE)
-                    return Integer.MAX_VALUE;
-
-
-                bound += minEdgeCost[i];
+        int minRemainingCost = Integer.MAX_VALUE;
+        for (int i = state.index; i < backups.size(); i++) {
+            BackupEdge b = backups.get(i);
+            // آیا این کابل حداقل یک یال پوشش‌نشده را پوشش می‌دهد؟
+            for (int id : b.covers) {
+                if (!state.covered[id]) {
+                    minRemainingCost = Math.min(minRemainingCost, b.cost);
+                    break; // فقط یک بار کافیست
+                }
             }
         }
-
-        return bound;
+        if (minRemainingCost == Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE; // غیرممکن
+        }
+        return bound + minRemainingCost;
     }
 
     private void branch(State state){

@@ -8,8 +8,8 @@ public class Main {
         Scanner sc = new Scanner(System.in);
 
         // ---------- ورودی درخت MST ----------
-        int n = sc.nextInt();          // تعداد شهرها
         int e = sc.nextInt();          // تعداد یال‌های MST (معمولاً n-1)
+        int n = e + 1;          // تعداد شهرها
 
         TreeMST tree = new TreeMST(n);
 
@@ -19,9 +19,8 @@ public class Main {
 
             int u = sc.nextInt();
             int v = sc.nextInt();
-            int w = sc.nextInt();
 
-            Edge edge = new Edge(i, u, v, w);
+            Edge edge = new Edge(i, u, v, 1);
 
             mstEdges.add(edge);
 
