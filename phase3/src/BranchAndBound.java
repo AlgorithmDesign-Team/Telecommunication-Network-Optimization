@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class BranchAndBound {
 
@@ -8,6 +9,19 @@ public class BranchAndBound {
     private int bestCost;
     private ArrayList<BackupEdge> bestAnswer;
 
+    private int[] minEdgeCost;
+
+    private void buildMinEdgeCost() {
+        minEdgeCost = new int[mstEdgeCount];
+        Arrays.fill(minEdgeCost, Integer.MAX_VALUE);
+
+        for (BackupEdge backup : backups) {
+            for (int edgeId : backup.covers) {
+                minEdgeCost[edgeId] = Math.min(minEdgeCost[edgeId], backup.cost);
+            }
+        }
+    }
+
     public BranchAndBound(ArrayList<BackupEdge> backups, int mstEdgeCount) {
 
         this.backups = backups;
@@ -15,6 +29,7 @@ public class BranchAndBound {
 
         bestCost = Integer.MAX_VALUE;
         bestAnswer = new ArrayList<>();
+        buildMinEdgeCost();
         // ساخت یک جواب اولیه با الگوریتم حریصانه
         greedyUpperBound();
     }
@@ -122,28 +137,17 @@ public class BranchAndBound {
     // کران پایین: هزینه فعلی + ارزان‌ترین کابلی که حداقل
     // یکی از یال‌های پوشش‌نشده را پوشش می‌دهد.
     private int lowerBound(State state) {
-        int bound = state.cost;
-        int minRemaining = Integer.MAX_VALUE;
+        int maxNeeded = 0;
 
-        for (int i = state.index; i < backups.size(); i++) {
-
-            BackupEdge b = backups.get(i);
-
-            for (int id : b.covers) {
-
-                if (!state.covered[id]) {
-
-                    minRemaining = Math.min(minRemaining, b.cost);
-                    break;
-
-                }
+        for (int i = 0; i < mstEdgeCount; i++) {
+            if (!state.covered[i]) {
+                if (minEdgeCost[i] == Integer.MAX_VALUE)
+                    return Integer.MAX_VALUE;
+                maxNeeded = Math.max(maxNeeded, minEdgeCost[i]);
             }
         }
 
-        if (minRemaining == Integer.MAX_VALUE)
-            return Integer.MAX_VALUE;
-
-        return bound + minRemaining;
+        return state.cost + maxNeeded;
     }
 
     // اجرای بازگشتی الگوریتم Branch and Bound
